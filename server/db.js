@@ -1,4 +1,5 @@
-require('dotenv').config(); // Cargar variables de entorno
+const {config} = require('dotenv') //Para ocultar credenciales
+config(); //cargar valores de .env
 
 const Pool = require('pg').Pool;
 
@@ -8,6 +9,7 @@ const pool = new Pool({
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
     database: process.env.DB_DATABASE
+
 });
 
 module.exports = pool;

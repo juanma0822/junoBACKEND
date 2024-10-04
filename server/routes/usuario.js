@@ -3,7 +3,8 @@ const router = express.Router();
 const pool = require('../db');
 const bcrypt = require('bcrypt');
 const saltRounds = 10; // Número de rondas de salt
-
+const jwtGenerator = require('../webToken/jwtGenerator.js')
+const auth = require('../webToken/accesoAutorizado.js')
 // Función para encriptar la contraseña
 const hashPassword = async (password) => {
   try {
@@ -14,6 +15,18 @@ const hashPassword = async (password) => {
     throw err;
   }
 };
+
+router.get('/estalogin',auth,async (req,res) =>{
+
+  //Aca en si la verificacon la hizo el Middleware, si llego a este punto es porque
+  //si esta autenticado, por eso se retorna el True
+  try {
+      res.json({token: true, correo: req.correo, nombre: req.nombre})
+  } catch (error) {
+      console.error(error.message);
+      res.status(500).json(error.message); //Error del servidor
+  }
+});
 
 // Ruta para crear un nuevo usuario
 router.post('/', async (req, res) => {
@@ -160,8 +173,11 @@ router.delete('/:correo_electronico', async (req, res) => {
   }
 });
 
+
+
 // Ruta para INICIAR SESION
 router.post('/login', async (req, res) => {
+  console.log('Datos recibidos:', req.body); // Agrega esta línea
     const { correo_electronico, contraseña } = req.body;
   
     try {
@@ -187,9 +203,11 @@ router.post('/login', async (req, res) => {
       if (!isMatch) {
         return res.status(401).json({ error: 'Contraseña incorrecta' });
       }
+
+      const token = jwtGenerator(usuario.correo_electronico,usuario.nombre_completo);
+      res.status(200).json({llave: token, message: 'Inicio de sesión exitoso', usuario});
+        
   
-      // Si todo está bien, devolver una respuesta exitosa
-      res.status(200).json({ message: 'Inicio de sesión exitoso', usuario });
   
     } catch (err) {
       console.error('Error al iniciar sesión:', err.message);
@@ -197,5 +215,7 @@ router.post('/login', async (req, res) => {
     }
   });
   
+
+
 
 module.exports = router;
