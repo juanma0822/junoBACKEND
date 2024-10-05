@@ -30,11 +30,11 @@ router.get('/estalogin',auth,async (req,res) =>{
 
 // Ruta para crear un nuevo usuario
 router.post('/', async (req, res) => {
-  const { correo_electronico, nombre_completo, fecha_nacimiento, telefono, ciudad, contraseña, sexo, hora_alerta } = req.body;
+  const { correo_electronico, nombre_usuario, nombre_real, apellidos, fecha_nacimiento, telefono, ciudad, contraseña, sexo, hora_alerta } = req.body;
 
   try {
-    if (!correo_electronico || !nombre_completo || !contraseña) {
-      return res.status(400).json({ error: 'Correo electrónico, nombre completo y contraseña son obligatorios' });
+    if (!correo_electronico || !nombre_usuario || !nombre_real || !apellidos || !contraseña) {
+      return res.status(400).json({ error: 'Correo electrónico, nombre de usuario, nombre real, apellidos y contraseña son obligatorios' });
     }
 
     // Encriptar la contraseña
@@ -42,12 +42,12 @@ router.post('/', async (req, res) => {
 
     // Consulta para insertar el nuevo usuario
     const query = `
-      INSERT INTO Usuario (correo_electronico, nombre_completo, fecha_nacimiento, telefono, ciudad, contraseña, sexo, hora_alerta)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      INSERT INTO Usuario (correo_electronico, nombre_usuario, nombre_real, apellidos, fecha_nacimiento, telefono, ciudad, contraseña, sexo, hora_alerta)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING *;
     `;
 
-    const values = [correo_electronico, nombre_completo, fecha_nacimiento, telefono, ciudad, hashedPassword, sexo, hora_alerta];
+    const values = [correo_electronico, nombre_usuario, nombre_real, apellidos, fecha_nacimiento, telefono, ciudad, hashedPassword, sexo, hora_alerta];
 
     const result = await pool.query(query, values);
 
@@ -94,10 +94,10 @@ router.get('/:correo_electronico', async (req, res) => {
 // Ruta para actualizar un usuario por correo electrónico
 router.put('/:correo_electronico', async (req, res) => {
   const { correo_electronico } = req.params;
-  const { nombre_completo, fecha_nacimiento, telefono, ciudad, contraseña, sexo, hora_alerta } = req.body;
+  const { nombre_usuario, nombre_real, apellidos, fecha_nacimiento, telefono, ciudad, contraseña, sexo, hora_alerta } = req.body;
 
   try {
-    if (!nombre_completo && !fecha_nacimiento && !telefono && !ciudad && !contraseña && !sexo && !hora_alerta) {
+    if (!nombre_usuario && !nombre_real && !apellidos && !fecha_nacimiento && !telefono && !ciudad && !contraseña && !sexo && !hora_alerta) {
       return res.status(400).json({ error: 'No se proporcionaron datos para actualizar' });
     }
 
@@ -106,9 +106,17 @@ router.put('/:correo_electronico', async (req, res) => {
     const values = [];
     let i = 1;
 
-    if (nombre_completo) {
-      query += ` nombre_completo = $${i++},`;
-      values.push(nombre_completo);
+    if (nombre_usuario) {
+      query += ` nombre_usuario = $${i++},`;
+      values.push(nombre_usuario);
+    }
+    if (nombre_real) {
+      query += ` nombre_real = $${i++},`;
+      values.push(nombre_real);
+    }
+    if (apellidos) {
+      query += ` apellidos = $${i++},`;
+      values.push(apellidos);
     }
     if (fecha_nacimiento) {
       query += ` fecha_nacimiento = $${i++},`;
@@ -204,7 +212,7 @@ router.post('/login', async (req, res) => {
         return res.status(401).json({ error: 'Contraseña incorrecta' });
       }
 
-      const token = jwtGenerator(usuario.correo_electronico,usuario.nombre_completo);
+      const token = jwtGenerator(usuario.correo_electronico,usuario.nombre_usuario);
       res.status(200).json({llave: token, message: 'Inicio de sesión exitoso', usuario});
         
   

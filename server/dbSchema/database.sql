@@ -3,7 +3,9 @@ CREATE DATABASE Juno;
 -- Tabla Usuario
 CREATE TABLE Usuario (
     correo_electronico VARCHAR(255) PRIMARY KEY,
-    nombre_completo VARCHAR(255) NOT NULL,
+    nombre_usuario VARCHAR(255) UNIQUE NOT NULL,
+    nombre_real VARCHAR(100) NOT NULL,
+    apellidos VARCHAR(100) NOT NULL,
     fecha_nacimiento DATE,
     telefono VARCHAR(20),
     ciudad VARCHAR(100),
@@ -40,6 +42,7 @@ CREATE TABLE Publicacion (
     emocion_asociada VARCHAR(50),
     fecha_evento DATE,
     correo_usuario VARCHAR(255),
+    username VARCHAR(255),
     FOREIGN KEY (correo_usuario) REFERENCES Usuario(correo_electronico)
 );
 

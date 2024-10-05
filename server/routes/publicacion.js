@@ -4,22 +4,22 @@ const pool = require('../db');
 
 // Ruta para crear una publicación
 router.post('/', async (req, res) => {
-  const { contenido, emocion_asociada, fecha_evento, correo_usuario } = req.body;
+  const { contenido, emocion_asociada, fecha_evento, correo_usuario, username } = req.body;
 
   try {
     // Validación básica de los datos
-    if (!contenido || !correo_usuario) {
-      return res.status(400).json({ error: 'Contenido y correo del usuario son obligatorios' });
+    if (!contenido || !correo_usuario || !username) {
+      return res.status(400).json({ error: 'Contenido, correo del usuario y nombre de usuario son obligatorios' });
     }
 
     // Consulta para insertar una nueva publicación
     const query = `
-      INSERT INTO Publicacion (contenido, emocion_asociada, fecha_evento, correo_usuario)
-      VALUES ($1, $2, $3, $4)
+      INSERT INTO Publicacion (contenido, emocion_asociada, fecha_evento, correo_usuario, username)
+      VALUES ($1, $2, $3, $4, $5)
       RETURNING *;
     `;
 
-    const values = [contenido, emocion_asociada, fecha_evento, correo_usuario];
+    const values = [contenido, emocion_asociada, fecha_evento, correo_usuario, username];
 
     const result = await pool.query(query, values);
 
@@ -39,6 +39,25 @@ router.get('/', async (req, res) => {
   } catch (err) {
     console.error('Error al obtener las publicaciones:', err.message);
     res.status(500).json({ error: 'Error al obtener las publicaciones' });
+  }
+});
+
+// Ruta para obtener todas las publicaciones de un usuario por correo electrónico
+router.get('/usuario/:correo_usuario', async (req, res) => {
+  const { correo_usuario } = req.params;
+
+  try {
+    const query = 'SELECT * FROM Publicacion WHERE correo_usuario = $1';
+    const result = await pool.query(query, [correo_usuario]);
+
+    if (result.rows.length > 0) {
+      res.status(200).json(result.rows);
+    } else {
+      res.status(404).json({ error: 'No se encontraron publicaciones para este usuario' });
+    }
+  } catch (err) {
+    console.error('Error al obtener las publicaciones del usuario:', err.message);
+    res.status(500).json({ error: 'Error al obtener las publicaciones del usuario' });
   }
 });
 
@@ -64,10 +83,10 @@ router.get('/:id_publicacion', async (req, res) => {
 // Ruta para actualizar una publicación por ID
 router.put('/:id_publicacion', async (req, res) => {
   const { id_publicacion } = req.params;
-  const { contenido, emocion_asociada, fecha_evento, correo_usuario } = req.body;
+  const { contenido, emocion_asociada, fecha_evento, correo_usuario, username } = req.body;
 
   try {
-    if (!contenido && !emocion_asociada && !fecha_evento && !correo_usuario) {
+    if (!contenido && !emocion_asociada && !fecha_evento && !correo_usuario && !username) {
       return res.status(400).json({ error: 'No se proporcionaron datos para actualizar' });
     }
 
@@ -90,6 +109,10 @@ router.put('/:id_publicacion', async (req, res) => {
     if (correo_usuario) {
       query += ` correo_usuario = $${i++},`;
       values.push(correo_usuario);
+    }
+    if (username) {
+      query += ` username = $${i++},`;
+      values.push(username);
     }
 
     query = query.slice(0, -1) + ` WHERE id_publicacion = $${i}`;

@@ -9,7 +9,7 @@ module.exports = async (req,res,next) => {
 
     try {
         const jwtToken = req.header("token");
-        console.log(jwtToken)
+
         //verificar que hay token
         if(!jwtToken){
             return res.status(403).json("No estas autorizado, no hay token");
