@@ -17,8 +17,8 @@ CREATE TABLE Usuario (
 -- Tabla Amistad
 CREATE TABLE Amistad (
     id_amistad SERIAL PRIMARY KEY,
-    estado VARCHAR(50),
-    fecha_creacion DATE,
+    estado VARCHAR(50) DEFAULT 'pendiente',  -- Valor por defecto 'pendiente'
+    fecha_creacion DATE DEFAULT CURRENT_DATE, -- Fecha actual por defecto
     correo_usuario_envia VARCHAR(255), 
     correo_usuario_recibe VARCHAR(255), 
     FOREIGN KEY (correo_usuario_envia) REFERENCES Usuario(correo_electronico),
@@ -35,7 +35,7 @@ CREATE TABLE Evento (
     FOREIGN KEY (correo_usuario) REFERENCES Usuario(correo_electronico)
 );
 
--- Tabla Publicación
+-- Tabla Publicacion
 CREATE TABLE Publicacion (
     id_publicacion SERIAL PRIMARY KEY,
     contenido TEXT NOT NULL,
@@ -53,7 +53,7 @@ CREATE TABLE Frases (
     emocion_asociada VARCHAR(50)
 );
 
--- Tabla intermedia UsuarioFrases 
+-- Tabla intermedia UsuarioFrases
 CREATE TABLE UsuarioFrases (
     correo_usuario VARCHAR(255),
     id_frase INT,

@@ -4,6 +4,7 @@ const cors = require("cors");
 const pool = require("./db");
 const usuarioRoutes = require('./routes/usuario'); //Importar modulo de rutas
 const publicacionRoutes = require("./routes/publicacion");
+const amigosRoutes = require("./routes/amigos");
 
 //middleware
 app.use(cors());
@@ -16,6 +17,9 @@ app.use('/usuarios', usuarioRoutes);
 
 // Rutas para publicaciones
 app.use('/publicaciones', publicacionRoutes);
+
+// Rutas para amistadoes
+app.use('/amistades', amigosRoutes);
 
 app.listen(5000, () =>{
     console.log("Server started on port 5000");

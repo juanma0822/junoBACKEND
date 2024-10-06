@@ -91,6 +91,26 @@ router.get('/:correo_electronico', async (req, res) => {
   }
 });
 
+// Ruta para obtener el correo electrónico de un usuario por su nombre de usuario
+router.get('/correo/:nombre_usuario', async (req, res) => {
+  const { nombre_usuario } = req.params;
+
+  try {
+    // Consulta para obtener el correo electrónico del usuario por su nombre de usuario
+    const query = 'SELECT correo_electronico FROM Usuario WHERE nombre_usuario = $1';
+    const result = await pool.query(query, [nombre_usuario]);
+
+    if (result.rows.length > 0) {
+      res.status(200).json({ correo_electronico: result.rows[0].correo_electronico });
+    } else {
+      res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+  } catch (err) {
+    console.error('Error al obtener el correo del usuario:', err.message);
+    res.status(500).json({ error: 'Error al obtener el correo del usuario' });
+  }
+});
+
 // Ruta para actualizar un usuario por correo electrónico
 router.put('/:correo_electronico', async (req, res) => {
   const { correo_electronico } = req.params;
@@ -222,6 +242,27 @@ router.post('/login', async (req, res) => {
       res.status(500).json({ error: 'Error al iniciar sesión' });
     }
   });
+
+// Ruta para obtener el nombre de un usuario por su correo electrónico
+router.get('/nombre/:correo_electronico', async (req, res) => {
+  const { correo_electronico } = req.params;
+
+  try {
+    // Consulta para obtener el nombre del usuario por correo electrónico
+    const query = 'SELECT nombre_usuario FROM Usuario WHERE correo_electronico = $1';
+    const result = await pool.query(query, [correo_electronico]);
+
+    if (result.rows.length > 0) {
+      res.status(200).json({ nombre: result.rows[0].nombre_usuario });
+    } else {
+      res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+  } catch (err) {
+    console.error('Error al obtener el nombre del usuario:', err.message);
+    res.status(500).json({ error: 'Error al obtener el nombre del usuario' });
+  }
+});
+
   
 
 
