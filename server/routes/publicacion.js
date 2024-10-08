@@ -150,4 +150,50 @@ router.delete('/:id_publicacion', async (req, res) => {
   }
 });
 
+// Ruta para obtener las publicaciones de los amigos de un usuario por su correo electrónico
+router.get('/amigos/:correo_usuario', async (req, res) => {
+  const { correo_usuario } = req.params;
+
+  try {
+    // Consulta para obtener los correos de los amigos cuyo estado de amistad es "aceptada"
+    const amigosQuery = `
+      SELECT correo_usuario_envia, correo_usuario_recibe
+      FROM Amistad
+      WHERE (correo_usuario_envia = $1 OR correo_usuario_recibe = $1)
+      AND estado = 'aceptada'
+    `;
+
+    const amigosResult = await pool.query(amigosQuery, [correo_usuario]);
+
+    if (amigosResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Este usuario no tiene amigos o no hay amistades aceptadas.' });
+    }
+
+    // Crear una lista con los correos de los amigos
+    const amigosCorreos = amigosResult.rows.map(row => {
+      return row.correo_usuario_envia === correo_usuario ? row.correo_usuario_recibe : row.correo_usuario_envia;
+    });
+
+    // Consulta para obtener las publicaciones de los amigos
+    const publicacionesQuery = `
+      SELECT * 
+      FROM Publicacion
+      WHERE correo_usuario = ANY($1::text[])
+      ORDER BY id_publicacion ASC;
+    `;
+
+    const publicacionesResult = await pool.query(publicacionesQuery, [amigosCorreos]);
+
+    if (publicacionesResult.rows.length > 0) {
+      res.status(200).json(publicacionesResult.rows);
+    } else {
+      res.status(404).json({ error: 'No se encontraron publicaciones de los amigos.' });
+    }
+  } catch (err) {
+    console.error('Error al obtener las publicaciones de los amigos:', err.message);
+    res.status(500).json({ error: 'Error al obtener las publicaciones de los amigos' });
+  }
+});
+
+
 module.exports = router;
