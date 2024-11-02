@@ -164,6 +164,7 @@ router.put('/:correo_electronico', async (req, res) => {
 
       // Si no se encuentra el usuario, devuelve un error 404
       if (result.rows.length === 0) {
+          
           return res.status(404).json({ error: 'Usuario no encontrado' });
       }
 
