@@ -9,7 +9,7 @@ router.get('/eventos/:correo_usuario', async (req, res) => {
     const { correo_usuario } = req.params;
     try {
         // Filtra los eventos por el correo del usuario autenticado
-        const eventos = await pool.query('SELECT * FROM evento WHERE correo_usuario = $1', [correo_usuario]);
+        const eventos = await pool.query('SELECT * FROM eventos WHERE correo_usuario = $1', [correo_usuario]);
 
         // Convertir fechas a formato de JavaScript para el frontend
         const eventosFormateados = eventos.rows.map(evento => ({
@@ -38,7 +38,7 @@ router.post('/eventos', async (req, res) => {
 
         // Agregar el nuevo evento a la base de datos
         const nuevoEvento = await pool.query(
-            'INSERT INTO evento (title, descripcion, emocion, fechaini, fechafin, correo_usuario) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+            'INSERT INTO eventos (title, descripcion, emocion, fechaini, fechafin, correo_usuario) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
             [title, desc, emocion, start, end, correo_usuario]
         );
 
@@ -58,7 +58,7 @@ router.put('/:id', async (req, res) => {
     try {
         // Actualizar el evento solo si existe
         const updatedEvent = await pool.query(
-            'UPDATE evento SET title = $1, descripcion = $2, emocion = $3, fechaini = $4, fechafin = $5 WHERE id = $6 RETURNING *',
+            'UPDATE eventos SET title = $1, descripcion = $2, emocion = $3, fechaini = $4, fechafin = $5 WHERE id = $6 RETURNING *',
             [title, desc, emocion, start, end, id]
         );
 
