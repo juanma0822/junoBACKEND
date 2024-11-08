@@ -7,6 +7,8 @@ const publicacionRoutes = require("./routes/publicacion");
 const amigosRoutes = require("./routes/amigos");
 const calendarioRoutes = require("./routes/calendario");
 
+//SIEMPRE CD SERVER Y SI LUEGO ENCENDER
+
 //middleware
 app.use(cors());
 app.use(express.json()); //req.body

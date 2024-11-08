@@ -4,8 +4,13 @@ const pool = require('../db');
 const bcrypt = require('bcrypt');
 const saltRounds = 10; // Número de rondas de salt
 const jwtGenerator = require('../webToken/jwtGenerator.js')
+const jwtForgot = require('../webToken/jwtForgotPass.js')
 const auth = require('../webToken/accesoAutorizado.js')
+const jwt = require('jsonwebtoken');
+const nodemailer = require("nodemailer")
 // Función para encriptar la contraseña
+const {config} = require('dotenv') //Para ocultar credenciales
+config(); 
 const hashPassword = async (password) => {
   try {
     const hashedPassword = await bcrypt.hash(password, saltRounds);
@@ -164,7 +169,7 @@ router.put('/:correo_electronico', async (req, res) => {
 
       // Si no se encuentra el usuario, devuelve un error 404
       if (result.rows.length === 0) {
-          
+
           return res.status(404).json({ error: 'Usuario no encontrado' });
       }
 
@@ -188,7 +193,6 @@ router.put('/:correo_electronico', async (req, res) => {
       res.status(500).json({ error: 'Error al actualizar el usuario' });
   }
 });
-
 
 // Ruta para actualizar clave de un usuario por correo electrónico
 router.put('/clave/:correo_electronico', async (req, res) => {
@@ -222,7 +226,6 @@ router.put('/clave/:correo_electronico', async (req, res) => {
   }
 });
 
-
 // Ruta para eliminar un usuario por correo electrónico
 router.delete('/:correo_electronico', async (req, res) => {
   const { correo_electronico } = req.params;
@@ -241,7 +244,6 @@ router.delete('/:correo_electronico', async (req, res) => {
     res.status(500).json({ error: 'Error al eliminar el usuario' });
   }
 });
-
 
 
 // Ruta para INICIAR SESION
@@ -283,6 +285,127 @@ router.post('/login', async (req, res) => {
       res.status(500).json({ error: 'Error al iniciar sesión' });
     }
   });
+
+//RECUPERAR CLAVE SESISON
+router.post('/forget-password', async(req, res) => {
+  try {
+    const { correo_electronico } = req.body;
+
+    if (!correo_electronico) {
+      return res.status(400).json({ error: 'Brindar correo electrónico' });
+    }
+
+    const checkUser = await pool.query(
+      "SELECT * FROM Usuario WHERE correo_electronico = $1", 
+      [correo_electronico]
+    );
+
+    if (!(checkUser.rows.length > 0)) {
+        console.log("No encontrado");
+        return res.status(409).json({ error: 'Correo del usuario no encontrado' });
+    } 
+
+    const token = jwtForgot(correo_electronico);
+
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      secure: true,
+      auth: {
+        user: process.env.MY_GMAIL,
+        pass: process.env.MY_PASSWORD,
+      },
+    });
+
+    const receiver = {
+      from: process.env.MY_GMAIL,  // Usar el correo de envío
+      replyTo: process.env.MY_GMAIL, // Usar el correo de respuesta
+      to: correo_electronico,
+      subject: "Solicitud de Cambio de Contraseña",
+      html: `
+        <h1>¡Hola!</h1>
+        <p>Estás recibiendo este mensaje porque has solicitado un cambio de contraseña. Haz clic en el siguiente enlace para restablecer tu contraseña:</p>
+        <a href="${process.env.CLIENT_URL}/${token}">Restablecer mi contraseña</a>
+        <p>Si no solicitaste este cambio, por favor ignora este correo.</p>
+        <p>¡Gracias!</p>
+      `,  // Usar HTML en lugar de texto plano
+      headers: {
+        'X-Mailer': 'NodeMailer',
+        'X-Priority': '3', // Prioridad normal
+      }
+    };
+
+    try {
+      await transporter.sendMail(receiver);
+      res.status(200).json({ message: 'Enlace enviado al correo' });
+      console.log('Correo enviado');
+    } catch (error) {
+      console.error('Error al enviar el correo:', error);
+      res.status(500).json({ error: 'Error al enviar el correo' });
+    }
+
+  } catch (error) {
+    console.error('Error en el proceso:', error);
+    res.status(500).json({ error: 'Error en el servidor' });
+  }
+});
+
+router.put('/reset-password/:token', async(req,res) => {
+  try {
+    const {token} = req.params;
+    const {contraseña} = req.body;
+
+    if (!contraseña){
+      return res.status(400).json({ error: 'Brindar contraseña' });
+    }
+
+    const decode = jwt.verify(token, process.env.jwtSecret2)
+    console.log(decode)
+
+    const query = 'SELECT * FROM Usuario WHERE correo_electronico = $1';
+    const result = await pool.query(query, [decode.correo]);
+    if (result.rows.length > 0) {
+      console.log("datos:")
+      console.log((result.rows[0]));
+      
+      //res.status(200).json(result.rows[0]);
+    } else {
+      
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    try {
+
+      // Encriptar la contraseña
+      const hashedPassword = await hashPassword(contraseña);
+  
+      const query = `
+        UPDATE Usuario 
+        SET contraseña = $1 
+        WHERE correo_electronico = $2 
+        RETURNING *;
+      `;
+      const values = [hashedPassword,decode.correo];
+      const result2 = await pool.query(query, values);
+  
+  
+      const usuario = result2.rows[0];
+      const token = jwtGenerator(usuario.correo_electronico, usuario.nombre_usuario);
+  
+      // Devuelve la respuesta de éxito
+      console.log("CLAVE ACTUALIZADA")
+      return res.status(200).json({ message: 'Clave Actualizada ', usuario: usuario, llave: token });
+  
+    } catch (err) {
+      console.error('Error al cambiar Clave:', err.message);
+      res.status(500).json({ error: 'Error al cambiar Clave' });
+    }
+
+
+  } catch (error) {
+    console.error('Error:', error.message);
+    res.status(500).json({ error: 'Error en el servidor' });
+  }
+})
 
 // Ruta para obtener el nombre de un usuario por su correo electrónico
 router.get('/nombre/:correo_electronico', async (req, res) => {
