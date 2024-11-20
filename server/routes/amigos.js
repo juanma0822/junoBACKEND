@@ -2,6 +2,8 @@ const express = require('express');
 const pool = require('../db'); // Asegúrate de tener tu pool configurado
 const router = express.Router();
 
+//RUTAS DE AMIGOS
+
 // Crear solicitud de amistad
 router.post('/enviar-solicitud', async (req, res) => {
     const { correo_envia, correo_recibe } = req.body;
