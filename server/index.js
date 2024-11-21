@@ -7,6 +7,8 @@ const publicacionRoutes = require("./routes/publicacion");
 const amigosRoutes = require("./routes/amigos");
 const calendarioRoutes = require("./routes/calendario");
 const alertasRoutes = require("./routes/alerta");
+const analisisRoutes = require('./routes/analisis');
+const perfilRoutes = require('./routes/perfil'); // Ruta para perfil
 
 //SIEMPRE CD SERVER Y SI LUEGO ENCENDER
 
@@ -30,6 +32,14 @@ app.use ('/calendario', calendarioRoutes);
 
 //Rutas para alertas
 app.use ('/alertas', alertasRoutes);
+
+//Rutas para analisis
+app.use('/analisis', analisisRoutes);
+
+
+// Rutas para perfil
+app.use('/perfil', perfilRoutes);
+
 
 app.listen(5000, () =>{
     console.log("Server started on port 5000");
