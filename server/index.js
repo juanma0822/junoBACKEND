@@ -6,6 +6,7 @@ const usuarioRoutes = require('./routes/usuario'); //Importar modulo de rutas
 const publicacionRoutes = require("./routes/publicacion");
 const amigosRoutes = require("./routes/amigos");
 const calendarioRoutes = require("./routes/calendario");
+const alertasRoutes = require("./routes/alerta");
 
 //SIEMPRE CD SERVER Y SI LUEGO ENCENDER
 
@@ -26,6 +27,9 @@ app.use('/amistades', amigosRoutes);
 
 //Rutas para eventos
 app.use ('/calendario', calendarioRoutes);
+
+//Rutas para alertas
+app.use ('/alertas', alertasRoutes);
 
 app.listen(5000, () =>{
     console.log("Server started on port 5000");
