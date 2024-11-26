@@ -32,11 +32,28 @@ router.post('/eventos', async (req, res) => {
         const { title, desc, emocion, start, end, correo_usuario } = req.body;
 
         // Verificar que todos los campos necesarios estén presentes
-        if (!title || !start || !end) {
+        if (!title || !start || !end || !correo_usuario) {
             return res.status(400).json("Faltan datos requeridos");
         }
 
-        // Agregar el nuevo evento a la base de datos
+        // Obtener la fecha actual (sin la hora) para la comparación
+        const fechaHoy = new Date();
+        fechaHoy.setHours(0, 0, 0, 0); // Establecer la hora a las 00:00 para comparar solo la fecha
+
+        // Consultar si ya existe un evento de tipo "Racha Diaria" para el día de hoy
+        const eventoExistente = await pool.query(
+            'SELECT * FROM eventos WHERE correo_usuario = $1 AND title LIKE $2 AND fechaini >= $3 AND fechaini < $4',
+            [correo_usuario, 'Racha Diaria%', fechaHoy, new Date(fechaHoy.getTime() + 24 * 60 * 60 * 1000)]
+        );
+
+        // Si ya existe, devolver un mensaje de error
+        if (eventoExistente.rows.length > 0 && title.includes('Racha Diaria')) {
+            return res.status(400).json({
+                message: `Ya registraste tu racha diaria por hoy.`
+            });
+        }
+
+        // Si no existe, agregar el nuevo evento a la base de datos
         const nuevoEvento = await pool.query(
             'INSERT INTO eventos (title, descripcion, emocion, fechaini, fechafin, correo_usuario) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
             [title, desc, emocion, start, end, correo_usuario]
@@ -44,11 +61,16 @@ router.post('/eventos', async (req, res) => {
 
         // Devuelve el evento creado en formato JSON
         res.json(nuevoEvento.rows[0]);
+
     } catch (error) {
         console.error(error.message);
         res.status(500).json("Error en el servidor");
     }
 });
+
+
+
+
 
 // Actualizar un evento
 router.put('/:id', async (req, res) => {
@@ -56,6 +78,11 @@ router.put('/:id', async (req, res) => {
     const { title, desc, emocion, start, end } = req.body;
 
     try {
+        // Verificar si el evento tiene el título "Racha Diaria"
+        if (title && title.includes('Racha Diaria')) {
+            return res.status(400).json({ message: 'No se puede editar el evento de Racha Diaria.' });
+        }
+
         // Actualizar el evento solo si existe
         const updatedEvent = await pool.query(
             'UPDATE eventos SET title = $1, descripcion = $2, emocion = $3, fechaini = $4, fechafin = $5 WHERE id = $6 RETURNING *',
