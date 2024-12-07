@@ -31,37 +31,87 @@ router.post('/eventos', async (req, res) => {
     try {
         const { title, desc, emocion, start, end, correo_usuario } = req.body;
 
-        // Verificar que todos los campos necesarios estén presentes
         if (!title || !start || !end || !correo_usuario) {
             return res.status(400).json("Faltan datos requeridos");
         }
 
-        // Obtener la fecha actual (sin la hora) para la comparación
         const fechaHoy = new Date();
-        fechaHoy.setHours(0, 0, 0, 0); // Establecer la hora a las 00:00 para comparar solo la fecha
+        fechaHoy.setHours(0, 0, 0, 0);
 
-        // Consultar si ya existe un evento de tipo "Racha Diaria" para el día de hoy
         const eventoExistente = await pool.query(
             'SELECT * FROM eventos WHERE correo_usuario = $1 AND title LIKE $2 AND fechaini >= $3 AND fechaini < $4',
             [correo_usuario, 'Racha Diaria%', fechaHoy, new Date(fechaHoy.getTime() + 24 * 60 * 60 * 1000)]
         );
 
-        // Si ya existe, devolver un mensaje de error
         if (eventoExistente.rows.length > 0 && title.includes('Racha Diaria')) {
             return res.status(400).json({
-                message: `Ya registraste tu racha diaria por hoy.`
+                message: `Ya registraste tu racha diaria por hoy.`,
             });
         }
 
-        // Si no existe, agregar el nuevo evento a la base de datos
+        // Insertar el nuevo evento
         const nuevoEvento = await pool.query(
             'INSERT INTO eventos (title, descripcion, emocion, fechaini, fechafin, correo_usuario) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
             [title, desc, emocion, start, end, correo_usuario]
         );
-
-        // Devuelve el evento creado en formato JSON
+        
+        // Calcular la racha actual después de agregar cualquier evento
+        // Calcular la racha actual después de agregar cualquier evento
+        try {
+            // Obtener todos los eventos "felices" del usuario
+            const eventosFelices = await pool.query(
+                `SELECT DISTINCT fechaini::date AS fecha
+                FROM eventos
+                WHERE correo_usuario = $1
+                AND LOWER(emocion) = 'feliz'
+                ORDER BY fechaini::date ASC`,
+                [correo_usuario]
+            );
+        
+            // Calcular la racha actual
+            let rachaActualCount = 0;
+            let rachaMax = 0;
+            let fechaAnterior = null;
+        
+            eventosFelices.rows.forEach(evento => {
+                const fechaEvento = new Date(evento.fecha);
+        
+                if (!fechaAnterior) {
+                    // Primera fecha
+                    fechaAnterior = fechaEvento;
+                    rachaActualCount = 1;
+                } else {
+                    const diferenciaDias =
+                        (fechaEvento.getTime() - fechaAnterior.getTime()) / (1000 * 60 * 60 * 24);
+        
+                    if (diferenciaDias === 1) {
+                        // Fecha es un día después de la anterior, continúa la racha
+                        rachaActualCount++;
+                    } else if (diferenciaDias > 1) {
+                        // Fecha no es consecutiva, reinicia la racha
+                        rachaActualCount = 1;
+                    }
+        
+                    // Actualizar la fecha anterior
+                    fechaAnterior = fechaEvento;
+                }
+        
+                // Actualizar racha máxima
+                rachaMax = Math.max(rachaMax, rachaActualCount);
+            });
+        
+            // Actualizar la racha máxima en la tabla Usuario
+            await pool.query(
+                'UPDATE Usuario SET racha_max = $1 WHERE correo_electronico = $2',
+                [rachaMax, correo_usuario]
+            );
+        } catch (error) {
+            console.error("Error al calcular la racha:", error.message);
+            res.status(500).json("Error al calcular la racha");
+        }
+        
+        // Enviar respuesta del nuevo evento
         res.json(nuevoEvento.rows[0]);
-
     } catch (error) {
         console.error(error.message);
         res.status(500).json("Error en el servidor");

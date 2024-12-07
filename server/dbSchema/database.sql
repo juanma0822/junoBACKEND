@@ -11,7 +11,8 @@ CREATE TABLE Usuario (
     ciudad VARCHAR(100),
     contraseña VARCHAR(100) NOT NULL,
     sexo VARCHAR(10),
-    hora_alerta TIME
+    hora_alerta TIME,
+    racha_max INT DEFAULT 0;
 );
 
 -- Tabla Amistad
