@@ -43,7 +43,7 @@ router.get('/usuario/:correo_usuario', async (req, res) => {
   const { correo_usuario } = req.params;
 
   try {
-    const query = 'SELECT * FROM Publicacion WHERE correo_usuario = $1 ORDER BY fecha_evento ASC';
+    const query = 'SELECT * FROM Publicacion WHERE correo_usuario = $1 ORDER BY fecha_evento DESC';
     const result = await pool.query(query, [correo_usuario]);
 
     if (result.rows.length > 0) {
