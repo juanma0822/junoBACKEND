@@ -1,4 +1,18 @@
-CREATE DATABASE Juno;
+-- CREATE DATABASE Juno;
+
+CREATE TABLE FotoPerfil (
+    id_foto SERIAL PRIMARY KEY,           -- Identificador único para cada foto
+    nombre_foto VARCHAR(255) UNIQUE NOT NULL,  -- Nombre único de la foto (ej. avatar1, avatar2)
+    referencia_foto VARCHAR(500) NOT NULL     -- Ruta o string de la foto
+);
+INSERT INTO FotoPerfil (nombre_foto, referencia_foto) 
+VALUES
+    ('zorro', '/ava1.png'),
+    ('juno', '/logos.png'),
+    ('gatoFeliz', '/gatoFeliz.png'),
+    ('perroFeliz', '/perroFeliz.png'),
+    ('conejoFeliz', '/conejoFeliz.png'),
+    ('vacaFeliz', '/vacaFeliz.png');
 
 -- Tabla Usuario
 CREATE TABLE Usuario (
@@ -12,8 +26,12 @@ CREATE TABLE Usuario (
     contraseña VARCHAR(100) NOT NULL,
     sexo VARCHAR(10),
     hora_alerta TIME,
-    racha_max INT DEFAULT 0;
+    racha_max INT DEFAULT 0,
+    id_foto INT, 
+    FOREIGN KEY (id_foto) REFERENCES FotoPerfil(id_foto) -- Clave foránea
 );
+
+
 
 -- Tabla Amistad
 CREATE TABLE Amistad (

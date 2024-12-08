@@ -62,12 +62,12 @@ router.post('/', async (req, res) => {
 
     // Consulta para insertar el nuevo usuario
     const query = `
-      INSERT INTO Usuario (correo_electronico, nombre_usuario, nombre_real, apellidos, fecha_nacimiento, telefono, ciudad, contraseña, sexo, hora_alerta)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      INSERT INTO Usuario (correo_electronico, nombre_usuario, nombre_real, apellidos, fecha_nacimiento, telefono, ciudad, contraseña, sexo, hora_alerta, id_foto)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       RETURNING *;
     `;
 
-    const values = [correo_electronico, nombre_usuario, nombre_real, apellidos, fecha_nacimiento, telefono, ciudad, hashedPassword, sexo, hora_alerta];
+    const values = [correo_electronico, nombre_usuario, nombre_real, apellidos, fecha_nacimiento, telefono, ciudad, hashedPassword, sexo, hora_alerta,2];
 
     const result = await pool.query(query, values);
 

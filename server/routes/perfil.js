@@ -65,4 +65,49 @@ router.get('/info/:correo', async (req, res) => {
     }
 });
 
+router.get('/idfoto/:correo', async (req,res) => {
+    const { correo } = req.params;
+
+    const query = ` SELECT Usuario.racha_max, FotoPerfil.* 
+                    FROM Usuario INNER JOIN FotoPerfil
+                    ON Usuario.id_foto = FotoPerfil.id_foto
+                    WHERE correo_electronico = $1;`;
+
+    try {
+        const userInfo = await pool.query(query, [correo]);
+        if (userInfo.rows.length > 0) {
+            res.json(userInfo.rows[0]);
+        } else {
+            res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+    } catch (err) {
+        console.error('Error al obtener la información del usuario (rachas y foto):', err);
+        res.status(500).json({ error: 'Error al obtener la información del usuario (rachas y foto' });
+}})
+
+// Ruta para actualizar la foto de perfil
+router.put('/actualizarfoto/:correo', async (req, res) => {
+    const { correo } = req.params;
+    const { id } = req.body;
+    if (!id) {
+        return res.status(400).json({ error: 'El id foto es requerido' });
+    }
+    const query = ` UPDATE Usuario
+                    SET id_foto = $1
+                    WHERE correo_electronico = $2
+                    RETURNING *;`;
+
+    try {
+        const userInfo = await pool.query(query, [id,correo]);
+        if (userInfo.rows.length > 0) {
+            res.json(userInfo.rows[0]);
+        } else {
+            res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+    } catch (err) {
+        console.error('Error al actualizar foto:', err);
+        res.status(500).json({ error: 'Error al actualizar foto' });
+}
+});
+
 module.exports = router;
