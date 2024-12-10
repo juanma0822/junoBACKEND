@@ -2,6 +2,9 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../db');
 const { config } = require('dotenv');
+const hoy = new Date();
+const inicioHoy = new Date(hoy.setHours(0, 0, 0, 0));
+const finHoy = new Date(inicioHoy.getTime() + 24 * 60 * 60 * 1000);
 config();
 
 // Obtener todos los eventos del usuario autenticado
@@ -26,6 +29,32 @@ router.get('/eventos/:correo_usuario', async (req, res) => {
     }
 });
 
+
+router.get('/calendario/eventos/:correo_usuario', async (req, res) => {
+    const { correo_usuario } = req.params;
+    try {
+        // Obtener los eventos del usuario
+        const eventos = await pool.query('SELECT * FROM eventos WHERE correo_usuario = $1', [correo_usuario]);
+
+        // Si no se encontraron eventos
+        if (eventos.rows.length === 0) {
+            return res.status(404).json("No se encontraron eventos para este correo.");
+        }
+
+        // Formatear eventos
+        const eventosFormateados = eventos.rows.map(evento => ({
+            ...evento,
+            start: new Date(evento.fechaini),
+            end: new Date(evento.fechafin),
+        }));
+
+        res.json(eventosFormateados); // Devolver los eventos al frontend
+    } catch (error) {
+        console.error("Error al obtener los eventos:", error.message);
+        res.status(500).json("Error en el servidor");
+    }
+});
+
 // Agregar un nuevo evento
 router.post('/eventos', async (req, res) => {
     try {
@@ -39,13 +68,13 @@ router.post('/eventos', async (req, res) => {
         fechaHoy.setHours(0, 0, 0, 0);
 
         const eventoExistente = await pool.query(
-            'SELECT * FROM eventos WHERE correo_usuario = $1 AND title LIKE $2 AND fechaini >= $3 AND fechaini < $4',
-            [correo_usuario, 'Racha Diaria%', fechaHoy, new Date(fechaHoy.getTime() + 24 * 60 * 60 * 1000)]
+            `SELECT 1 FROM eventos WHERE correo_usuario = $1 AND title LIKE $2 AND fechaini BETWEEN $3 AND $4`,
+            [correo_usuario, 'Racha Diaria%', inicioHoy, finHoy]
         );
 
         if (eventoExistente.rows.length > 0 && title.includes('Racha Diaria')) {
             return res.status(400).json({
-                message: `Ya registraste tu racha diaria por hoy.`,
+                
             });
         }
 
@@ -55,7 +84,6 @@ router.post('/eventos', async (req, res) => {
             [title, desc, emocion, start, end, correo_usuario]
         );
         
-        // Calcular la racha actual después de agregar cualquier evento
         // Calcular la racha actual después de agregar cualquier evento
         try {
             // Obtener todos los eventos "felices" del usuario
@@ -122,6 +150,7 @@ router.post('/eventos', async (req, res) => {
 
 
 
+
 // Actualizar un evento
 router.put('/:id', async (req, res) => {
     const { id } = req.params; // ID del evento a actualizar
@@ -149,5 +178,7 @@ router.put('/:id', async (req, res) => {
         res.status(500).json({ error: 'Error al actualizar el evento' });
     }
 });
+
+
 
 module.exports = router;
