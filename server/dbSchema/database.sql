@@ -45,15 +45,15 @@ CREATE TABLE Amistad (
 );
 
 -- Tabla Evento
-CREATE TABLE eventos(
+CREATE TABLE eventos (
     id SERIAL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     descripcion TEXT,
     emocion VARCHAR(50),
-    fechaini TIMESTAMP NOT NULL,
-    fechafin TIMESTAMP NOT NULL,
+    fechaini TIMESTAMP WITH TIME ZONE NOT NULL,
+    fechafin TIMESTAMP WITH TIME ZONE NOT NULL,
     correo_usuario VARCHAR(255),
-    FOREIGN KEY (correo_usuario) REFERENCES Usuario(correo_electronico) 
+    FOREIGN KEY (correo_usuario) REFERENCES Usuario(correo_electronico)
 );
 
 -- Tabla Publicacion

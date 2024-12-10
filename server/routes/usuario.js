@@ -427,8 +427,28 @@ router.get('/nombre/:correo_electronico', async (req, res) => {
   }
 });
 
-  
+router.put('/:correo_electronico/hora-alerta', async (req, res) => {
+  const { correo_electronico } = req.params;
+  const { hora_alerta } = req.body;
 
+  try {
+      // Verifica si el correo electrónico está en la base de datos
+      const result = await pool.query(
+          'UPDATE Usuario SET hora_alerta = $1 WHERE correo_electronico = $2 RETURNING *',
+          [hora_alerta, correo_electronico]
+      );
+      
+      if (result.rows.length === 0) {
+          return res.status(404).json({ message: 'Usuario no encontrado' });
+      }
+
+      // Responde con los datos actualizados del usuario
+      res.json(result.rows[0]);
+  } catch (error) {
+      console.error('Error al actualizar la hora de alerta:', error);
+      res.status(500).json({ error: 'Error al actualizar la hora de alerta' });
+  }
+});
 
 
 module.exports = router;
